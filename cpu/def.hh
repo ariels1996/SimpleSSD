@@ -48,6 +48,7 @@ typedef enum : uint16_t {
   // Common
   READ,
   WRITE,
+  ADD,
   FLUSH,
   TRIM,
   FORMAT,
@@ -92,6 +93,8 @@ typedef enum : uint16_t {
   VECTOR_CHUNK_RESET,
   PHYSICAL_PAGE_READ,
   PHYSICAL_PAGE_WRITE,
+  //TODO cpu page add def
+   PHYSICAL_PAGE_ADD,
   PHYSICAL_BLOCK_ERASE,
 
   // UFS__DEVICE

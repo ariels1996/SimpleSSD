@@ -751,6 +751,207 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   return ret;
 }
 
+// TODO cache add
+bool GenericCache::add(Request &req, uint64_t &tick) {
+  bool ret = false;
+
+  debugprint(LOG_ICL_GENERIC_CACHE,
+             "READ  | REQ %7u-%-4u | LCA %" PRIu64 " | SIZE %" PRIu64,
+             req.reqID, req.reqSubID, req.range.slpn, req.length);
+
+  if (useReadCaching) {
+    uint32_t setIdx = calcSetIndex(req.range.slpn);
+    uint32_t wayIdx;
+    uint64_t arrived = tick;
+
+    if (useReadPrefetch) {
+      checkSequential(req, readDetect);
+    }
+
+    wayIdx = getValidWay(req.range.slpn, tick);
+
+    // Do we have valid data?
+    if (wayIdx != waySize) {
+      uint64_t tickBackup = tick;
+
+      // Wait cache to be valid
+      if (tick < cacheData[setIdx][wayIdx].insertedAt) {
+        tick = cacheData[setIdx][wayIdx].insertedAt;
+      }
+
+      // Update last accessed time
+      cacheData[setIdx][wayIdx].lastAccessed = tick;
+
+      // DRAM access
+      pDRAM->read(&cacheData[setIdx][wayIdx], req.length, tick);
+
+      debugprint(LOG_ICL_GENERIC_CACHE,
+                 "READ  | Cache hit at (%u, %u) | %" PRIu64 " - %" PRIu64
+                 " (%" PRIu64 ")",
+                 setIdx, wayIdx, arrived, tick, tick - arrived);
+
+      ret = true;
+
+      // Do we need to prefetch data?
+      if (useReadPrefetch && req.range.slpn == prefetchTrigger) {
+        debugprint(LOG_ICL_GENERIC_CACHE, "READ  | Prefetch triggered");
+
+        req.range.slpn = lastPrefetched;
+
+        // Backup tick
+        arrived = tick;
+        tick = tickBackup;
+
+        goto ICL_GENERIC_CACHE_READ;
+      }
+    }
+    // We should read data from NVM
+    else {
+    ICL_GENERIC_CACHE_READ:
+      FTL::Request reqInternal(lineCountInSuperPage, req);
+      std::vector<std::pair<uint64_t, uint64_t>> readList;
+      uint32_t row, col;  // Variable for I/O position (IOFlag)
+      uint64_t dramAt;
+      uint64_t beginLCA, endLCA;
+      uint64_t beginAt, finishedAt = tick;
+
+      if (readDetect.enabled) {
+        // TEMP: Disable DRAM calculation for prevent conflict
+        pDRAM->setScheduling(false);
+
+        if (!ret) {
+          debugprint(LOG_ICL_GENERIC_CACHE, "READ  | Read ahead triggered");
+        }
+
+        beginLCA = req.range.slpn;
+
+        // If super-page is disabled, just read all pages from all planes
+        if (prefetchMode == MODE_ALL || !bSuperPage) {
+          endLCA = beginLCA + lineCountInMaxIO;
+          prefetchTrigger = beginLCA + lineCountInMaxIO / 2;
+        }
+        else {
+          endLCA = beginLCA + lineCountInSuperPage;
+          prefetchTrigger = beginLCA + lineCountInSuperPage / 2;
+        }
+
+        lastPrefetched = endLCA;
+      }
+      else {
+        beginLCA = req.range.slpn;
+        endLCA = beginLCA + 1;
+      }
+
+      for (uint64_t lca = beginLCA; lca < endLCA; lca++) {
+        beginAt = tick;
+
+        // Check cache
+        if (getValidWay(lca, beginAt) != waySize) {
+          continue;
+        }
+
+        // Find way to write data read from NVM
+        setIdx = calcSetIndex(lca);
+        wayIdx = getEmptyWay(setIdx, beginAt);
+
+        if (wayIdx == waySize) {
+          wayIdx = evictFunction(setIdx, beginAt);
+
+          if (cacheData[setIdx][wayIdx].dirty) {
+            // We need to evict data before write
+            calcIOPosition(cacheData[setIdx][wayIdx].tag, row, col);
+            evictData[row][col] = cacheData[setIdx] + wayIdx;
+          }
+        }
+
+        cacheData[setIdx][wayIdx].insertedAt = beginAt;
+        cacheData[setIdx][wayIdx].lastAccessed = beginAt;
+        cacheData[setIdx][wayIdx].valid = true;
+        cacheData[setIdx][wayIdx].dirty = false;
+
+        readList.push_back({lca, ((uint64_t)setIdx << 32) | wayIdx});
+
+        finishedAt = MAX(finishedAt, beginAt);
+      }
+
+      tick = finishedAt;
+
+      evictCache(tick);
+
+      for (auto &iter : readList) {
+        Line *pLine = &cacheData[iter.second >> 32][iter.second & 0xFFFFFFFF];
+
+        // Read data
+        reqInternal.lpn = iter.first / lineCountInSuperPage;
+        reqInternal.ioFlag.reset();
+        reqInternal.ioFlag.set(iter.first % lineCountInSuperPage);
+
+        beginAt = tick;  // Ignore cache metadata access
+
+        // If superPageSizeData is true, read first LPN only
+        pFTL->read(reqInternal, beginAt);
+
+        // DRAM delay
+        dramAt = pLine->insertedAt;
+        pDRAM->write(pLine, lineSize, dramAt);
+
+        // Set cache data
+        beginAt = MAX(beginAt, dramAt);
+
+        pLine->insertedAt = beginAt;
+        pLine->lastAccessed = beginAt;
+        pLine->tag = iter.first;
+
+        if (pLine->tag == req.range.slpn) {
+          finishedAt = beginAt;
+        }
+
+        debugprint(LOG_ICL_GENERIC_CACHE,
+                   "READ  | Cache miss at (%u, %u) | %" PRIu64 " - %" PRIu64
+                   " (%" PRIu64 ")",
+                   iter.second >> 32, iter.second & 0xFFFFFFFF, tick, beginAt,
+                   beginAt - tick);
+      }
+
+      tick = finishedAt;
+
+      if (readDetect.enabled) {
+        if (ret) {
+          // This request was prefetch
+          debugprint(LOG_ICL_GENERIC_CACHE, "READ  | Prefetch done");
+
+          // Restore tick
+          tick = arrived;
+        }
+        else {
+          debugprint(LOG_ICL_GENERIC_CACHE, "READ  | Read ahead done");
+        }
+
+        // TEMP: Restore
+        pDRAM->setScheduling(true);
+      }
+    }
+
+    tick += applyLatency(CPU::ICL__GENERIC_CACHE, CPU::READ);
+  }
+  else {
+    FTL::Request reqInternal(lineCountInSuperPage, req);
+
+    pDRAM->write(nullptr, req.length, tick);
+
+    pFTL->read(reqInternal, tick);
+  }
+
+  stat.request[0]++;
+
+  if (ret) {
+    stat.cache[0]++;
+  }
+
+  return ret;
+}
+
+
 // True when flushed
 void GenericCache::flush(LPNRange &range, uint64_t &tick) {
   if (useReadCaching || useWriteCaching) {

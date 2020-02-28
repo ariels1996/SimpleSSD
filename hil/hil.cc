@@ -84,7 +84,8 @@ void HIL::write(Request &req) {
 
     ICL::Request reqInternal(*pReq);
     pICL->write(reqInternal, tick);
-
+    
+    
     stat.request[1]++;
     stat.iosize[1] += pReq->length;
     updateBusyTime(1, beginAt, tick);
@@ -100,6 +101,42 @@ void HIL::write(Request &req) {
 
   execute(CPU::HIL, CPU::WRITE, doWrite, new Request(req));
 }
+
+void HIL::add(Request &req) {
+  DMAFunction doAdd = [this](uint64_t beginAt, void *context) {
+    auto pReq = (Request *)context;
+    uint64_t tick = beginAt;
+
+    pReq->reqID = ++reqCount;
+
+    debugprint(LOG_HIL,
+               "ADD | REQ %7u | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
+               " + %" PRIu64,
+               pReq->reqID, pReq->range.slpn, pReq->range.nlp, pReq->offset,
+               pReq->length);
+
+    ICL::Request reqInternal(*pReq);
+    pICL->add(reqInternal, tick);
+
+    stat.request[0]++;
+    stat.iosize[0] += pReq->length;
+    stat.request[1]++;
+    stat.iosize[1] += pReq->length;
+    updateBusyTime(0, beginAt, tick);
+    updateBusyTime(1, beginAt, tick);
+    updateBusyTime(2, beginAt, tick);
+
+    pReq->finishedAt = tick;
+    completionQueue.push(*pReq);
+
+    updateCompletion();
+
+    delete pReq;
+  };
+
+  execute(CPU::HIL, CPU::ADD, doAdd, new Request(req));
+}
+
 
 void HIL::flush(Request &req) {
   DMAFunction doFlush = [this](uint64_t tick, void *context) {

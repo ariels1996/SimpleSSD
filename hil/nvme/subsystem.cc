@@ -492,6 +492,25 @@ void Subsystem::trim(Namespace *ns, uint64_t slba, uint64_t nlblk,
   execute(CPU::NVME__SUBSYSTEM, CPU::CONVERT_UNIT, doTrim, req);
 }
 
+void Subsystem::add(Namespace *ns, uint64_t slba, uint64_t nlblk,
+                      DMAFunction &func, void *context) {
+    
+	Request *req = new Request(func, context);
+ 	DMAFunction doAdd = [this](uint64_t, void *context) {
+    auto req = (Request *)context;
+
+    //TODO NVMe subsystem add 
+    pHIL->add(*req);
+    delete req;
+  	};
+
+    convertUnit(ns, slba, nlblk, *req);
+
+    execute(CPU::NVME__SUBSYSTEM, CPU::CONVERT_UNIT, doAdd, req);           
+                      
+
+}
+
 bool Subsystem::deleteSQueue(SQEntryWrapper &req, RequestFunction &func) {
   CQEntryWrapper resp(req);
   uint16_t sqid = req.entry.dword10 & 0xFFFF;

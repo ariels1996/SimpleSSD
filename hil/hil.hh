@@ -58,6 +58,7 @@ class HIL : public StatObject {
 
   void read(Request &);
   void write(Request &);
+  void add(Request &);
   void flush(Request &);
   void trim(Request &);
 

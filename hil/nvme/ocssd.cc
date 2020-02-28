@@ -15,6 +15,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with SimpleSSD.  If not, see <http://www.gnu.org/licenses/>.
+ * 
+ * open channel ssd not have FTL but inherit NVMe sys.
  */
 
 #include "hil/nvme/ocssd.hh"
@@ -265,6 +267,10 @@ void OpenChannelSSD12::submitCommand(SQEntryWrapper &req,
           break;
         case OPCODE_PHYSICAL_PAGE_WRITE:
           physicalPageWrite(req, func);
+          break;
+        //TODO do i need PHYSICAL_PAGE_ADD
+        case OPCODE_PHYSICAL_PAGE_ADD:
+          physicalPageAdd(req, func);
           break;
         default:
           resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS,
@@ -564,6 +570,7 @@ bool OpenChannelSSD12::deviceIdentification(SQEntryWrapper &req,
     delete pContext->dma;
     delete pContext;
   };
+
   static DMAFunction doWrite = [](uint64_t, void *context) {
     RequestContext *pContext = (RequestContext *)context;
 
@@ -1128,6 +1135,150 @@ void OpenChannelSSD12::physicalPageRead(SQEntryWrapper &req,
   }
 }
 
+
+
+
+// void OpenChannelSSD12::physicalPageAdd(SQEntryWrapper &req,
+//                                         RequestFunction &func) {
+//   bool err = false;
+
+//   CQEntryWrapper resp(req);
+//   VectorContext *pContext = new VectorContext(func, resp);
+
+//   uint8_t nppa = (req.entry.dword12 & 0x3F) + 1;
+//   uint64_t ppa = ((uint64_t)req.entry.dword11 << 32) | req.entry.dword10;
+
+//   readCount++;
+
+//   debugprint(LOG_HIL_NVME, "OCSSD   | Physical Page Read   | %d lbas", nppa);
+
+//   if (nppa < 1) {
+//     err = true;
+//     resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS,
+//                     STATUS_INVALID_FIELD);
+//   }
+
+//   if (!err) {
+//     pContext->slba = ppa;
+//     pContext->nlb = nppa;
+
+//     DMAFunction doDMA = [this](uint64_t now, void *context) {
+//       DMAFunction doAdd = [this](uint64_t now, void *context) { 
+
+
+//         DMAFunction nandDone = [](uint64_t, void *context) {
+
+//           DMAFunction dmaDone = [](uint64_t now, void *context) {
+
+
+//             VectorContext *pContext = (VectorContext *)context;
+
+//             debugprint(LOG_HIL_NVME,
+//                        "OCSSD   | Physical Block Add   | %" PRIu64
+//                        " - %" PRIu64 " (%" PRIu64 ")",
+//                        pContext->beginAt, now, now - pContext->beginAt);
+
+//             pContext->resp.entry.dword0 = 0xFFFFFFFF;
+//             pContext->resp.entry.reserved = 0xFFFFFFFF;
+
+//             pContext->function(pContext->resp);
+
+
+//             delete pContext;
+//           };
+
+//           VectorContext *pContext = (VectorContext *)context;
+
+//            pContext->dma->write(0, pContext->nlb * LBA_SIZE, pContext->buffer,
+//                                 dmaDone, context);
+//         };
+
+
+
+//         VectorContext *pContext = (VectorContext *)context;
+
+//         std::vector<::CPDPBP> list;
+//         uint64_t beginAt;
+//         uint64_t finishedAt = now;
+
+//         if (pContext->nlb == 1) {
+//           pContext->lbaList.push_back(pContext->slba);
+//         }
+//         else {
+//           for (uint8_t i = 0; i < pContext->nlb; i++) {
+//             pContext->lbaList.push_back(
+//                 *(uint64_t *)(pContext->buffer + i * 8));
+//           }
+
+//           free(pContext->buffer);
+//         }
+
+//         pContext->buffer = (uint8_t *)calloc(pContext->nlb * LBA_SIZE, 1);
+//         //TODO add pDisk func
+//         for (uint64_t i = 0; i < pContext->nlb; i++) {
+//           pDisk->add(pContext->lbaList.at(i), 1,
+//                       pContext->buffer + i * LBA_SIZE);
+//         }
+
+//         //TODO physical page add how much do i need to write the block
+        
+//         mergeList(pContext->lbaList, list);
+
+//         for (auto &iter : list) {
+//           beginAt = now;
+
+//           pPALOLD->add(iter, beginAt);
+
+//           finishedAt = MAX(finishedAt, beginAt);
+//         }
+
+//         Request req = Request(nandDone, context);
+//         req.finishedAt = finishedAt;
+
+//         completionQueue.push(req);
+//         updateCompletion();
+
+//         free(pContext->buffer);
+//         delete pContext->dma;
+//       };
+
+//       VectorContext *pContext = (VectorContext *)context;
+
+//       if (pContext->nlb > 1) {
+//         pContext->buffer = (uint8_t *)calloc(pContext->nlb * 8, 1);
+
+//         cfgdata.pInterface->dmaRead(pContext->slba, pContext->nlb * 8,
+//                                     pContext->buffer, doAdd, context);
+//       }
+//       else {
+//         doAdd(now, context);
+//       }
+//     };
+
+//     CPUContext *pCPU = new CPUContext(doDMA, pContext, CPU::NVME__OCSSD,
+//                                       CPU::PHYSICAL_PAGE_ADD);
+
+//     pContext->beginAt = getTick();
+
+//     if (req.useSGL) {
+//       pContext->dma =
+//           new SGL(cfgdata, cpuHandler, pCPU, req.entry.data1, req.entry.data2);
+//     }
+//     else {
+//       pContext->dma = new PRPList(cfgdata, cpuHandler, pCPU, req.entry.data1,
+//                                   req.entry.data2, (uint64_t)nppa * LBA_SIZE);
+//     }
+//   }
+
+//   if (err) {
+//     func(resp);
+//   }
+// }
+
+
+
+
+
 void OpenChannelSSD12::getStatList(std::vector<Stats> &list,
                                    std::string prefix) {
   Stats temp;
@@ -1369,6 +1520,10 @@ void OpenChannelSSD20::submitCommand(SQEntryWrapper &req,
           break;
         case OPCODE_WRITE:
           write(req, func);
+          break;
+        //TODO NVME::ocssd NVM commands of ADD 
+        case OPCODE_ADD:
+          add(req,func);
           break;
         case OPCODE_DATASET_MANAGEMEMT:
           datasetManagement(req, func);

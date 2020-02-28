@@ -118,6 +118,8 @@ class OpenChannelSSD12 : public Subsystem {
   uint64_t eraseCount;
   uint64_t readCount;
   uint64_t writeCount;
+  //TODO (not useful)
+  uint64_t addCount;
 
   void updateCompletion();
   void completion();
@@ -137,6 +139,9 @@ class OpenChannelSSD12 : public Subsystem {
   void physicalBlockErase(SQEntryWrapper &, RequestFunction &);
   void physicalPageWrite(SQEntryWrapper &, RequestFunction &);
   void physicalPageRead(SQEntryWrapper &, RequestFunction &);
+  //TODO add
+  void physicalPageAdd(SQEntryWrapper &, RequestFunction &);
+
 
  public:
   OpenChannelSSD12(Controller *, ConfigData &);
@@ -161,6 +166,8 @@ class OpenChannelSSD20 : public OpenChannelSSD12 {
   uint64_t vectorEraseCount;
   uint64_t vectorReadCount;
   uint64_t vectorWriteCount;
+  //TODO nvme::ocssd.hh add count 
+  uint64_t vectorAddCount;
 
   ChunkDescriptor *getChunkDescriptor(uint32_t, uint32_t, uint32_t);
   uint64_t makeLBA(uint32_t, uint32_t, uint32_t, uint32_t);
@@ -173,16 +180,22 @@ class OpenChannelSSD20 : public OpenChannelSSD12 {
                      bool = false);
   void eraseInternal(std::vector<uint64_t> &, DMAFunction &, void *,
                      bool = false);
+  //TODO nvme::ocssd.hh addInternal
+  void addInternal(std::vector<uint64_t> &, DMAFunction &, void *,
+                     bool = false);
 
   // Commands
   bool getLogPage(SQEntryWrapper &, RequestFunction &);
   bool geometry(SQEntryWrapper &, RequestFunction &);
   void read(SQEntryWrapper &, RequestFunction &);
   void write(SQEntryWrapper &, RequestFunction &);
+  //TODO nvme::ocssd.hh add
+  void add(SQEntryWrapper &, RequestFunction &);
   void datasetManagement(SQEntryWrapper &, RequestFunction &);
   void vectorChunkRead(SQEntryWrapper &, RequestFunction &);
   void vectorChunkWrite(SQEntryWrapper &, RequestFunction &);
   void vectorChunkReset(SQEntryWrapper &, RequestFunction &);
+  void vectorChunkAdd(SQEntryWrapper &, RequestFunction &);
 
  public:
   OpenChannelSSD20(Controller *, ConfigData &);

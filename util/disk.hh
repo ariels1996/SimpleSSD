@@ -48,6 +48,8 @@ class Disk {
 
   virtual uint16_t read(uint64_t, uint16_t, uint8_t *);
   virtual uint16_t write(uint64_t, uint16_t, uint8_t *);
+  //TODO add func for disk
+  virtual uint16_t add(uint64_t, uint16_t, uint8_t *);
   virtual uint16_t erase(uint64_t, uint16_t);
 };
 

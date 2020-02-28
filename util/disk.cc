@@ -182,6 +182,46 @@ uint16_t Disk::erase(uint64_t, uint16_t nlblk) {
   return nlblk;
 }
 
+//TODO disk add func like read 
+uint16_t Disk::add(uint64_t slba, uint16_t nlblk, uint8_t *buffer) {
+  uint16_t ret = 0;
+
+  if (disk.is_open()) {
+    uint64_t avail;
+
+    slba *= sectorSize;
+    avail = nlblk * sectorSize;
+
+    if (slba + avail > diskSize) {
+      if (slba >= diskSize) {
+        avail = 0;
+      }
+      else {
+        avail = diskSize - slba;
+      }
+    }
+
+    if (avail > 0) {
+      disk.seekg(slba, std::ios::beg);
+      if (!disk.good()) {
+        // panic("nvme_disk: Fail to seek to %" PRIu64 "\n", slba);
+      }
+
+      disk.read((char *)buffer, avail);
+    }
+
+    memset(buffer + avail, 0, nlblk * sectorSize - avail);
+
+    // DPRINTF(NVMeDisk, "DISK    | READ  | BYTE %016" PRIX64 " + %X\n",
+    //         slba, nlblk * sectorSize);
+
+    ret = nlblk;
+  }
+
+  return ret;
+}
+
+
 CoWDisk::CoWDisk() {}
 
 CoWDisk::~CoWDisk() {

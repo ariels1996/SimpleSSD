@@ -46,6 +46,7 @@ class ICL : public StatObject {
 
   void read(Request &, uint64_t &);
   void write(Request &, uint64_t &);
+  void add(Request &, uint64_t &);
 
   void flush(LPNRange &, uint64_t &);
   void trim(LPNRange &, uint64_t &);

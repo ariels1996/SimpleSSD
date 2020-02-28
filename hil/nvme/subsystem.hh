@@ -78,6 +78,8 @@ class Subsystem : public AbstractSubsystem {
   void write(Namespace *, uint64_t, uint64_t, DMAFunction &, void *);
   void flush(Namespace *, DMAFunction &, void *);
   void trim(Namespace *, uint64_t, uint64_t, DMAFunction &, void *);
+  //TODO nvme:: subsystem.hh
+  void add(Namespace *,uint64_t, uint64_t, DMAFunction &, void *);
 
   void getStatList(std::vector<Stats> &, std::string) override;
   void getStatValues(std::vector<double> &) override;
