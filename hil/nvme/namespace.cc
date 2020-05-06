@@ -497,7 +497,7 @@ void Namespace::add(SQEntryWrapper &req, RequestFunction &func) {
              req.sqID, req.sqUID, req.entry.dword0.commandID, nsid, slba, nlb);
 
   if (!err) {
-    DMAFunction doAdd = [this](uint64_t tick, void *context) {
+    DMAFunction doRead = [this](uint64_t tick, void *context) {
       DMAFunction dmaDone = [this](uint64_t tick, void *context) {
         IOContext *pContext = (IOContext *)context;
 
@@ -506,17 +506,16 @@ void Namespace::add(SQEntryWrapper &req, RequestFunction &func) {
         if (pContext->beginAt == 2) {
           debugprint(
               LOG_HIL_NVME,
-              "NVM     | WRITE | CQ %u | SQ %u:%u | CID %u | NSID %-5d | "
+              "NVM     | READ  | CQ %u | SQ %u:%u | CID %u | NSID %-5d | "
               "%" PRIX64 " + %d | %" PRIu64 " - %" PRIu64 " (%" PRIu64 ")",
               pContext->resp.cqID, pContext->resp.entry.dword2.sqID,
               pContext->resp.sqUID, pContext->resp.entry.dword3.commandID, nsid,
               pContext->slba, pContext->nlb, pContext->tick, tick,
               tick - pContext->tick);
+
           pContext->function(pContext->resp);
 
           if (pContext->buffer) {
-            pDisk->write(pContext->slba, pContext->nlb, pContext->buffer);
-
             free(pContext->buffer);
           }
 
@@ -524,7 +523,6 @@ void Namespace::add(SQEntryWrapper &req, RequestFunction &func) {
           delete pContext;
         }
       };
-
 
       IOContext *pContext = (IOContext *)context;
 
@@ -550,7 +548,7 @@ void Namespace::add(SQEntryWrapper &req, RequestFunction &func) {
     pContext->nlb = nlb;
 
     CPUContext *pCPU =
-        new CPUContext(doAdd, pContext, CPU::NVME__NAMESPACE, CPU::READ);
+        new CPUContext(doRead, pContext, CPU::NVME__NAMESPACE, CPU::READ);
 
     if (req.useSGL) {
       pContext->dma =
