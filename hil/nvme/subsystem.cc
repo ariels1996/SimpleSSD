@@ -464,6 +464,23 @@ void Subsystem::write(Namespace *ns, uint64_t slba, uint64_t nlblk,
   execute(CPU::NVME__SUBSYSTEM, CPU::CONVERT_UNIT, doWrite, req);
 }
 
+//TODO Nvme subsystem add function 추가 
+void Subsystem::add(Namespace *ns, uint64_t slba, uint64_t nlblk,
+                      DMAFunction &func, void *context) {
+  Request *req = new Request(func, context);
+  DMAFunction doAdd = [this](uint64_t, void *context) {
+    auto req = (Request *)context;
+
+    pHIL->add(*req);
+
+    delete req;
+  };
+
+  convertUnit(ns, slba, nlblk, *req);
+
+  execute(CPU::NVME__SUBSYSTEM, CPU::CONVERT_UNIT, doAdd, req);
+}
+
 void Subsystem::flush(Namespace *ns, DMAFunction &func, void *context) {
   Request req(func, context);
   Namespace::Information *info = ns->getInfo();

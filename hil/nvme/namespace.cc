@@ -472,7 +472,7 @@ void Namespace::read(SQEntryWrapper &req, RequestFunction &func) {
   }
 }
 
-//TODO 많은 보수 필요 
+//TODO Namespace add function 추가 
 void Namespace::add(SQEntryWrapper &req, RequestFunction &func) {
   bool err = false;
 

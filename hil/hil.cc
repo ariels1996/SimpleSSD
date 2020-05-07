@@ -102,6 +102,7 @@ void HIL::write(Request &req) {
   execute(CPU::HIL, CPU::WRITE, doWrite, new Request(req));
 }
 
+//TODO NVME ::HIL:: add function 추가 
 void HIL::add(Request &req) {
   DMAFunction doAdd = [this](uint64_t beginAt, void *context) {
     auto pReq = (Request *)context;
@@ -110,7 +111,7 @@ void HIL::add(Request &req) {
     pReq->reqID = ++reqCount;
 
     debugprint(LOG_HIL,
-               "ADD | REQ %7u | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
+               "ADD  | REQ %7u | LCA %" PRIu64 " + %" PRIu64 " | BYTE %" PRIu64
                " + %" PRIu64,
                pReq->reqID, pReq->range.slpn, pReq->range.nlp, pReq->offset,
                pReq->length);
@@ -120,10 +121,7 @@ void HIL::add(Request &req) {
 
     stat.request[0]++;
     stat.iosize[0] += pReq->length;
-    stat.request[1]++;
-    stat.iosize[1] += pReq->length;
     updateBusyTime(0, beginAt, tick);
-    updateBusyTime(1, beginAt, tick);
     updateBusyTime(2, beginAt, tick);
 
     pReq->finishedAt = tick;
