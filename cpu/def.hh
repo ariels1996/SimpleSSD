@@ -48,7 +48,6 @@ typedef enum : uint16_t {
   // Common
   READ,
   WRITE,
-  ADD,
   FLUSH,
   TRIM,
   FORMAT,
@@ -56,7 +55,6 @@ typedef enum : uint16_t {
   // FTL__PAGE_MAPPING
   READ_INTERNAL,
   WRITE_INTERNAL,
-  ADD_INTERNAL,
   ERASE_INTERNAL,
   TRIM_INTERNAL,
   SELECT_VICTIM_BLOCK,
@@ -94,8 +92,6 @@ typedef enum : uint16_t {
   VECTOR_CHUNK_RESET,
   PHYSICAL_PAGE_READ,
   PHYSICAL_PAGE_WRITE,
-  //TODO cpu page add def
-   PHYSICAL_PAGE_ADD,
   PHYSICAL_BLOCK_ERASE,
 
   // UFS__DEVICE
@@ -113,6 +109,11 @@ typedef enum : uint16_t {
   WRITE_NCQ,
   WRITE_DMA_SETUP,
   WRITE_DMA_DONE,
+  // New Function
+  ADD,
+  ADD_INTERNAL,
+  //TODO cpu page add def
+  PHYSICAL_PAGE_ADD,
 } FUNCTION;
 
 }  // namespace CPU

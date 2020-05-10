@@ -74,6 +74,7 @@
 #  40: writeDMADone
 #  41: add
 #  42: addInternal
+#  43: physical page add
 
 function = [
     ["ftl/ftl.cc", "read", 0, 0],
@@ -147,6 +148,7 @@ function = [
     ["hil/nvme/ocssd.cc", "physicalBlockErase", 10, 28],
     ["hil/nvme/ocssd.cc", "add", 10, 41],
     ["hil/nvme/ocssd.cc", "addInternal", 10, 42],
+    ["hil/nvme/ocssd.cc", "physicalPageAdd", 10, 43],
     ["hil/ufs/device.cc", "processQueryCommand", 11, 29],
     ["hil/ufs/device.cc", "processCommand", 11, 30],
     ["hil/ufs/device.cc", "prdtRead", 11, 31],

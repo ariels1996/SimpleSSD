@@ -291,7 +291,8 @@ CPU::CPU(ConfigReader &c) : conf(c), lastResetStat(0) {
       {41, InstStat(95, 276, 60, 150, 0, 4, clockPeriod)});
   cpi.find(10)->second.insert(
       {42, InstStat(72, 236, 77, 141, 0, 3, clockPeriod)});
-
+  cpi.find(10)->second.insert(
+      {43, InstStat(206, 692, 157, 315, 0, 5, clockPeriod)});
   cpi.find(11)->second.insert(
       {29, InstStat(51, 132, 40, 97, 0, 0, clockPeriod)});
   cpi.find(11)->second.insert(

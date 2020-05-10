@@ -1227,7 +1227,7 @@ void OpenChannelSSD12::physicalPageAdd(SQEntryWrapper &req,
         for (auto &iter : list) {
           beginAt = now;
 
-          pPALOLD->add(iter, beginAt);
+          pPALOLD->read(iter, beginAt);
 
           finishedAt = MAX(finishedAt, beginAt);
         }
