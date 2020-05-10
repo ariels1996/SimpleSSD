@@ -127,6 +127,7 @@ void ICL::write(Request &req, uint64_t &tick) {
   tick += applyLatency(CPU::ICL, CPU::WRITE);
 }
 
+//TODO ICL :: add function 추가 
 void ICL::add(Request &req, uint64_t &tick) {
   uint64_t beginAt;
   uint64_t finishedAt = tick;
@@ -150,7 +151,7 @@ void ICL::add(Request &req, uint64_t &tick) {
   }
 
   debugprint(LOG_ICL,
-             "ADD | LCA %" PRIu64 " + %" PRIu64 " | %" PRIu64 " - %" PRIu64
+             "ADD  | LCA %" PRIu64 " + %" PRIu64 " | %" PRIu64 " - %" PRIu64
              " (%" PRIu64 ")",
              req.range.slpn, req.range.nlp, tick, finishedAt,
              finishedAt - tick);

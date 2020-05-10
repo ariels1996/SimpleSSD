@@ -81,6 +81,15 @@ void FTL::write(Request &req, uint64_t &tick) {
   tick += applyLatency(CPU::FTL, CPU::WRITE);
 }
 
+//TODO FTL start function for add 
+void FTL::add(Request &req, uint64_t &tick) {
+  debugprint(LOG_FTL, "ADD | LPN %" PRIu64, req.lpn);
+
+  pFTL->add(req, tick);
+
+  tick += applyLatency(CPU::FTL, CPU::ADD);
+}
+
 void FTL::trim(Request &req, uint64_t &tick) {
   debugprint(LOG_FTL, "TRIM  | LPN %" PRIu64, req.lpn);
 

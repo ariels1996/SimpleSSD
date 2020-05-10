@@ -751,12 +751,12 @@ bool GenericCache::write(Request &req, uint64_t &tick) {
   return ret;
 }
 
-// TODO cache add
+// TODO cache:: add
 bool GenericCache::add(Request &req, uint64_t &tick) {
   bool ret = false;
 
   debugprint(LOG_ICL_GENERIC_CACHE,
-             "READ  | REQ %7u-%-4u | LCA %" PRIu64 " | SIZE %" PRIu64,
+             "ADD  | REQ %7u-%-4u | LCA %" PRIu64 " | SIZE %" PRIu64,
              req.reqID, req.reqSubID, req.range.slpn, req.length);
 
   if (useReadCaching) {
@@ -888,8 +888,8 @@ bool GenericCache::add(Request &req, uint64_t &tick) {
 
         beginAt = tick;  // Ignore cache metadata access
 
-        // If superPageSizeData is true, read first LPN only
-        pFTL->read(reqInternal, beginAt);
+        // If superPageSizeData is true, add first LPN only
+        pFTL->add(reqInternal, beginAt);
 
         // DRAM delay
         dramAt = pLine->insertedAt;
@@ -907,7 +907,7 @@ bool GenericCache::add(Request &req, uint64_t &tick) {
         }
 
         debugprint(LOG_ICL_GENERIC_CACHE,
-                   "READ  | Cache miss at (%u, %u) | %" PRIu64 " - %" PRIu64
+                   "ADD  | Cache miss at (%u, %u) | %" PRIu64 " - %" PRIu64
                    " (%" PRIu64 ")",
                    iter.second >> 32, iter.second & 0xFFFFFFFF, tick, beginAt,
                    beginAt - tick);
@@ -918,13 +918,13 @@ bool GenericCache::add(Request &req, uint64_t &tick) {
       if (readDetect.enabled) {
         if (ret) {
           // This request was prefetch
-          debugprint(LOG_ICL_GENERIC_CACHE, "READ  | Prefetch done");
+          debugprint(LOG_ICL_GENERIC_CACHE, "ADD  | Prefetch done");
 
           // Restore tick
           tick = arrived;
         }
         else {
-          debugprint(LOG_ICL_GENERIC_CACHE, "READ  | Read ahead done");
+          debugprint(LOG_ICL_GENERIC_CACHE, "ADD  | Read ahead done");
         }
 
         // TEMP: Restore
@@ -932,14 +932,14 @@ bool GenericCache::add(Request &req, uint64_t &tick) {
       }
     }
 
-    tick += applyLatency(CPU::ICL__GENERIC_CACHE, CPU::READ);
+    tick += applyLatency(CPU::ICL__GENERIC_CACHE, CPU::ADD);
   }
   else {
     FTL::Request reqInternal(lineCountInSuperPage, req);
 
     pDRAM->write(nullptr, req.length, tick);
 
-    pFTL->read(reqInternal, tick);
+    pFTL->add(reqInternal, tick);
   }
 
   stat.request[0]++;

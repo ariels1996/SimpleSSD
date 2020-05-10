@@ -219,6 +219,25 @@ void PageMapping::write(Request &req, uint64_t &tick) {
   tick += applyLatency(CPU::FTL__PAGE_MAPPING, CPU::WRITE);
 }
 
+//TODO FTL page mapping start for add function 
+void PageMapping::add(Request &req, uint64_t &tick) {
+  uint64_t begin = tick;
+
+  if (req.ioFlag.count() > 0) {
+    addInternal(req, tick);
+
+    debugprint(LOG_FTL_PAGE_MAPPING,
+               "ADD | LPN %" PRIu64 " | %" PRIu64 " - %" PRIu64 " (%" PRIu64
+               ")",
+               req.lpn, begin, tick, tick - begin);
+  }
+  else {
+    warn("FTL got empty request");
+  }
+
+  tick += applyLatency(CPU::FTL__PAGE_MAPPING, CPU::ADD);
+}
+
 void PageMapping::trim(Request &req, uint64_t &tick) {
   uint64_t begin = tick;
 
@@ -781,6 +800,147 @@ void PageMapping::writeInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   if (sendToPAL) {
     tick = finishedAt;
     tick += applyLatency(CPU::FTL__PAGE_MAPPING, CPU::WRITE_INTERNAL);
+  }
+
+  // GC if needed
+  // I assumed that init procedure never invokes GC
+  static float gcThreshold = conf.readFloat(CONFIG_FTL, FTL_GC_THRESHOLD_RATIO);
+
+  if (freeBlockRatio() < gcThreshold) {
+    if (!sendToPAL) {
+      panic("ftl: GC triggered while in initialization");
+    }
+
+    std::vector<uint32_t> list;
+    uint64_t beginAt = tick;
+
+    selectVictimBlock(list, beginAt);
+
+    debugprint(LOG_FTL_PAGE_MAPPING,
+               "GC   | On-demand | %u blocks will be reclaimed", list.size());
+
+    doGarbageCollection(list, beginAt);
+
+    debugprint(LOG_FTL_PAGE_MAPPING,
+               "GC   | Done | %" PRIu64 " - %" PRIu64 " (%" PRIu64 ")", tick,
+               beginAt, beginAt - tick);
+
+    stat.gcCount++;
+    stat.reclaimedBlocks += list.size();
+  }
+}
+
+//TODO Pagemapping :: Add internal
+void PageMapping::addInternal(Request &req, uint64_t &tick, bool sendToPAL) {
+  PAL::Request palRequest(req);
+  std::unordered_map<uint32_t, Block>::iterator block;
+  auto mappingList = table.find(req.lpn);
+  uint64_t beginAt;
+  uint64_t finishedAt = tick;
+  bool readBeforeWrite = true;
+
+  if (mappingList != table.end()) {
+    for (uint32_t idx = 0; idx < bitsetSize; idx++) {
+      if (req.ioFlag.test(idx) || !bRandomTweak) {
+        auto &mapping = mappingList->second.at(idx);
+
+        if (mapping.first < param.totalPhysicalBlocks &&
+            mapping.second < param.pagesInBlock) {
+          block = blocks.find(mapping.first);
+
+          // Invalidate current page
+          block->second.invalidate(mapping.second, idx);
+        }
+      }
+    }
+  }
+  else {
+    // Create empty mapping
+    auto ret = table.emplace(
+        req.lpn,
+        std::vector<std::pair<uint32_t, uint32_t>>(
+            bitsetSize, {param.totalPhysicalBlocks, param.pagesInBlock}));
+
+    if (!ret.second) {
+      panic("Failed to insert new mapping");
+    }
+
+    mappingList = ret.first;
+  }
+
+  // Write data to free block
+  block = blocks.find(getLastFreeBlock(req.ioFlag));
+
+  if (block == blocks.end()) {
+    panic("No such block");
+  }
+
+  if (sendToPAL) {
+    if (bRandomTweak) {
+      pDRAM->read(&(*mappingList), 8 * req.ioFlag.count(), tick);
+      pDRAM->write(&(*mappingList), 8 * req.ioFlag.count(), tick);
+    }
+    else {
+      pDRAM->read(&(*mappingList), 8, tick);
+      pDRAM->write(&(*mappingList), 8, tick);
+    }
+  }
+
+  if (!bRandomTweak && !req.ioFlag.all()) {
+    // We have to read old data
+    readBeforeWrite = true;
+  }
+
+  for (uint32_t idx = 0; idx < bitsetSize; idx++) {
+    if (req.ioFlag.test(idx) || !bRandomTweak) {
+      uint32_t pageIndex = block->second.getNextWritePageIndex(idx);
+      auto &mapping = mappingList->second.at(idx);
+
+      beginAt = tick;
+
+      block->second.write(pageIndex, req.lpn, idx, beginAt);
+
+      // Read old data if needed (Only executed when bRandomTweak = false)
+      // Maybe some other init procedures want to perform 'partial-write'
+      // So check sendToPAL variable
+      if (readBeforeWrite && sendToPAL) {
+        palRequest.blockIndex = mapping.first;
+        palRequest.pageIndex = mapping.second;
+
+        // We don't need to read old data
+        palRequest.ioFlag = req.ioFlag;
+        palRequest.ioFlag.flip();
+
+        pPAL->read(palRequest, beginAt);
+      }
+
+      // update mapping to table
+      mapping.first = block->first;
+      mapping.second = pageIndex;
+
+      if (sendToPAL) {
+        palRequest.blockIndex = block->first;
+        palRequest.pageIndex = pageIndex;
+
+        if (bRandomTweak) {
+          palRequest.ioFlag.reset();
+          palRequest.ioFlag.set(idx);
+        }
+        else {
+          palRequest.ioFlag.set();
+        }
+
+        pPAL->write(palRequest, beginAt);
+      }
+
+      finishedAt = MAX(finishedAt, beginAt);
+    }
+  }
+
+  // Exclude CPU operation when initializing
+  if (sendToPAL) {
+    tick = finishedAt;
+    tick += applyLatency(CPU::FTL__PAGE_MAPPING, CPU::ADD_INTERNAL);
   }
 
   // GC if needed

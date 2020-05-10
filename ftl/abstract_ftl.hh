@@ -50,6 +50,7 @@ class AbstractFTL : public StatObject {
 
   virtual void read(Request &, uint64_t &) = 0;
   virtual void write(Request &, uint64_t &) = 0;
+  virtual void add(Request &, uint64_t &) = 0;
   virtual void trim(Request &, uint64_t &) = 0;
 
   virtual void format(LPNRange &, uint64_t &) = 0;

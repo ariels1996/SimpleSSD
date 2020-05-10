@@ -75,6 +75,7 @@ class PageMapping : public AbstractFTL {
   void writeInternal(Request &, uint64_t &, bool = true);
   void trimInternal(Request &, uint64_t &);
   void eraseInternal(PAL::Request &, uint64_t &);
+  void addInternal(Request &, uint64_t &, bool = true);
 
  public:
   PageMapping(ConfigReader &, Parameter &, PAL::PAL *, DRAM::AbstractDRAM *);
@@ -84,6 +85,7 @@ class PageMapping : public AbstractFTL {
 
   void read(Request &, uint64_t &) override;
   void write(Request &, uint64_t &) override;
+  void add(Request &, uint64_t &) override;
   void trim(Request &, uint64_t &) override;
 
   void format(LPNRange &, uint64_t &) override;

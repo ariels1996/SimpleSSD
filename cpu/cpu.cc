@@ -163,6 +163,9 @@ CPU::CPU(ConfigReader &c) : conf(c), lastResetStat(0) {
   cpi.find(0)->second.insert({1, InstStat(5, 32, 6, 13, 0, 1, clockPeriod)});
   cpi.find(0)->second.insert({3, InstStat(5, 32, 6, 13, 0, 1, clockPeriod)});
   cpi.find(0)->second.insert({4, InstStat(4, 24, 4, 6, 0, 0, clockPeriod)});
+  //add
+  cpi.find(0)->second.insert({41, InstStat(5, 32, 6, 13, 0, 1, clockPeriod)});
+  
   cpi.find(1)->second.insert({0, InstStat(8, 28, 7, 18, 0, 1, clockPeriod)});
   cpi.find(1)->second.insert({1, InstStat(8, 28, 7, 19, 0, 0, clockPeriod)});
   cpi.find(1)->second.insert({3, InstStat(4, 28, 6, 11, 0, 0, clockPeriod)});
@@ -180,11 +183,19 @@ CPU::CPU(ConfigReader &c) : conf(c), lastResetStat(0) {
       {8, InstStat(34, 140, 10, 146, 0, 0, clockPeriod)});
   cpi.find(1)->second.insert(
       {7, InstStat(120, 236, 86, 260, 0, 1, clockPeriod)});
+  //add
+  cpi.find(1)->second.insert({41, InstStat(8, 28, 7, 19, 0, 0, clockPeriod)});
+  cpi.find(1)->second.insert(
+      {42, InstStat(133, 452, 54, 377, 91, 1, clockPeriod)});
+  
   cpi.find(2)->second.insert({0, InstStat(8, 88, 17, 27, 0, 1, clockPeriod)});
   cpi.find(2)->second.insert({1, InstStat(8, 88, 17, 27, 0, 1, clockPeriod)});
   cpi.find(2)->second.insert({2, InstStat(5, 40, 6, 12, 0, 0, clockPeriod)});
   cpi.find(2)->second.insert({3, InstStat(5, 40, 6, 12, 0, 0, clockPeriod)});
   cpi.find(2)->second.insert({4, InstStat(5, 40, 6, 12, 0, 0, clockPeriod)});
+  //add
+  cpi.find(2)->second.insert({41, InstStat(8, 88, 17, 27, 0, 1, clockPeriod)});
+
   cpi.find(3)->second.insert(
       {0, InstStat(90, 532, 64, 284, 0, 1, clockPeriod)});
   cpi.find(3)->second.insert(
@@ -192,6 +203,10 @@ CPU::CPU(ConfigReader &c) : conf(c), lastResetStat(0) {
   cpi.find(3)->second.insert({2, InstStat(22, 120, 20, 59, 0, 2, clockPeriod)});
   cpi.find(3)->second.insert({3, InstStat(22, 120, 20, 61, 0, 2, clockPeriod)});
   cpi.find(3)->second.insert({4, InstStat(9, 72, 12, 86, 0, 1, clockPeriod)});
+  //add
+  cpi.find(3)->second.insert(
+      {41, InstStat(82, 496, 53, 312, 0, 5, clockPeriod)});
+
   cpi.find(4)->second.insert(
       {0, InstStat(61, 312, 102, 120, 0, 2, clockPeriod)});
   cpi.find(4)->second.insert(
@@ -212,12 +227,20 @@ CPU::CPU(ConfigReader &c) : conf(c), lastResetStat(0) {
       {0, InstStat(99, 456, 94, 177, 0, 6, clockPeriod)});
   cpi.find(6)->second.insert(
       {1, InstStat(99, 456, 94, 177, 0, 6, clockPeriod)});
+  //add
+   cpi.find(6)->second.insert(
+      {41, InstStat(99, 456, 94, 177, 0, 6, clockPeriod)});
+
   cpi.find(7)->second.insert(
       {18, InstStat(44, 152, 35, 78, 0, 2, clockPeriod)});
   cpi.find(7)->second.insert(
       {0, InstStat(99, 456, 94, 177, 0, 6, clockPeriod)});
   cpi.find(7)->second.insert(
       {1, InstStat(99, 456, 94, 177, 0, 6, clockPeriod)});
+  //add
+  cpi.find(7)->second.insert(
+      {41, InstStat(99, 456, 94, 177, 0, 6, clockPeriod)});
+
   cpi.find(8)->second.insert(
       {19, InstStat(119, 220, 45, 160, 0, 6, clockPeriod)});
   cpi.find(8)->second.insert({20, InstStat(4, 40, 14, 110, 0, 1, clockPeriod)});
@@ -231,6 +254,10 @@ CPU::CPU(ConfigReader &c) : conf(c), lastResetStat(0) {
   cpi.find(9)->second.insert({2, InstStat(51, 124, 28, 78, 0, 3, clockPeriod)});
   cpi.find(9)->second.insert(
       {22, InstStat(131, 364, 71, 200, 0, 7, clockPeriod)});
+  //add
+  cpi.find(9)->second.insert(
+      {41, InstStat(86, 304, 47, 141, 0, 3, clockPeriod)});
+      
   cpi.find(10)->second.insert(
       {19, InstStat(155, 100, 12, 208, 0, 4, clockPeriod)});
   cpi.find(10)->second.insert(
@@ -259,6 +286,12 @@ CPU::CPU(ConfigReader &c) : conf(c), lastResetStat(0) {
       {27, InstStat(183, 620, 154, 284, 0, 6, clockPeriod)});
   cpi.find(10)->second.insert(
       {28, InstStat(162, 460, 78, 227, 0, 4, clockPeriod)});
+  //add
+  cpi.find(10)->second.insert(
+      {41, InstStat(95, 276, 60, 150, 0, 4, clockPeriod)});
+  cpi.find(10)->second.insert(
+      {42, InstStat(72, 236, 77, 141, 0, 3, clockPeriod)});
+
   cpi.find(11)->second.insert(
       {29, InstStat(51, 132, 40, 97, 0, 0, clockPeriod)});
   cpi.find(11)->second.insert(
