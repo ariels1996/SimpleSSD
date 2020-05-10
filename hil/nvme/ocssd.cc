@@ -1138,142 +1138,142 @@ void OpenChannelSSD12::physicalPageRead(SQEntryWrapper &req,
 
 
 
-// void OpenChannelSSD12::physicalPageAdd(SQEntryWrapper &req,
-//                                         RequestFunction &func) {
-//   bool err = false;
+void OpenChannelSSD12::physicalPageAdd(SQEntryWrapper &req,
+                                        RequestFunction &func) {
+  bool err = false;
 
-//   CQEntryWrapper resp(req);
-//   VectorContext *pContext = new VectorContext(func, resp);
+  CQEntryWrapper resp(req);
+  VectorContext *pContext = new VectorContext(func, resp);
 
-//   uint8_t nppa = (req.entry.dword12 & 0x3F) + 1;
-//   uint64_t ppa = ((uint64_t)req.entry.dword11 << 32) | req.entry.dword10;
+  uint8_t nppa = (req.entry.dword12 & 0x3F) + 1;
+  uint64_t ppa = ((uint64_t)req.entry.dword11 << 32) | req.entry.dword10;
 
-//   readCount++;
+  readCount++;
 
-//   debugprint(LOG_HIL_NVME, "OCSSD   | Physical Page Read   | %d lbas", nppa);
+  debugprint(LOG_HIL_NVME, "OCSSD   | Physical Page Read   | %d lbas", nppa);
 
-//   if (nppa < 1) {
-//     err = true;
-//     resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS,
-//                     STATUS_INVALID_FIELD);
-//   }
+  if (nppa < 1) {
+    err = true;
+    resp.makeStatus(true, false, TYPE_GENERIC_COMMAND_STATUS,
+                    STATUS_INVALID_FIELD);
+  }
 
-//   if (!err) {
-//     pContext->slba = ppa;
-//     pContext->nlb = nppa;
+  if (!err) {
+    pContext->slba = ppa;
+    pContext->nlb = nppa;
 
-//     DMAFunction doDMA = [this](uint64_t now, void *context) {
-//       DMAFunction doAdd = [this](uint64_t now, void *context) { 
-
-
-//         DMAFunction nandDone = [](uint64_t, void *context) {
-
-//           DMAFunction dmaDone = [](uint64_t now, void *context) {
+    DMAFunction doDMA = [this](uint64_t now, void *context) {
+      DMAFunction doAdd = [this](uint64_t now, void *context) { 
 
 
-//             VectorContext *pContext = (VectorContext *)context;
+        DMAFunction nandDone = [](uint64_t, void *context) {
 
-//             debugprint(LOG_HIL_NVME,
-//                        "OCSSD   | Physical Block Add   | %" PRIu64
-//                        " - %" PRIu64 " (%" PRIu64 ")",
-//                        pContext->beginAt, now, now - pContext->beginAt);
-
-//             pContext->resp.entry.dword0 = 0xFFFFFFFF;
-//             pContext->resp.entry.reserved = 0xFFFFFFFF;
-
-//             pContext->function(pContext->resp);
+          DMAFunction dmaDone = [](uint64_t now, void *context) {
 
 
-//             delete pContext;
-//           };
+            VectorContext *pContext = (VectorContext *)context;
 
-//           VectorContext *pContext = (VectorContext *)context;
+            debugprint(LOG_HIL_NVME,
+                       "OCSSD   | Physical Block Add   | %" PRIu64
+                       " - %" PRIu64 " (%" PRIu64 ")",
+                       pContext->beginAt, now, now - pContext->beginAt);
 
-//            pContext->dma->write(0, pContext->nlb * LBA_SIZE, pContext->buffer,
-//                                 dmaDone, context);
-//         };
+            pContext->resp.entry.dword0 = 0xFFFFFFFF;
+            pContext->resp.entry.reserved = 0xFFFFFFFF;
+
+            pContext->function(pContext->resp);
+
+
+            delete pContext;
+          };
+
+          VectorContext *pContext = (VectorContext *)context;
+
+           pContext->dma->write(0, pContext->nlb * LBA_SIZE, pContext->buffer,
+                                dmaDone, context);
+        };
 
 
 
-//         VectorContext *pContext = (VectorContext *)context;
+        VectorContext *pContext = (VectorContext *)context;
 
-//         std::vector<::CPDPBP> list;
-//         uint64_t beginAt;
-//         uint64_t finishedAt = now;
+        std::vector<::CPDPBP> list;
+        uint64_t beginAt;
+        uint64_t finishedAt = now;
 
-//         if (pContext->nlb == 1) {
-//           pContext->lbaList.push_back(pContext->slba);
-//         }
-//         else {
-//           for (uint8_t i = 0; i < pContext->nlb; i++) {
-//             pContext->lbaList.push_back(
-//                 *(uint64_t *)(pContext->buffer + i * 8));
-//           }
+        if (pContext->nlb == 1) {
+          pContext->lbaList.push_back(pContext->slba);
+        }
+        else {
+          for (uint8_t i = 0; i < pContext->nlb; i++) {
+            pContext->lbaList.push_back(
+                *(uint64_t *)(pContext->buffer + i * 8));
+          }
 
-//           free(pContext->buffer);
-//         }
+          free(pContext->buffer);
+        }
 
-//         pContext->buffer = (uint8_t *)calloc(pContext->nlb * LBA_SIZE, 1);
-//         //TODO add pDisk func
-//         for (uint64_t i = 0; i < pContext->nlb; i++) {
-//           pDisk->add(pContext->lbaList.at(i), 1,
-//                       pContext->buffer + i * LBA_SIZE);
-//         }
+        pContext->buffer = (uint8_t *)calloc(pContext->nlb * LBA_SIZE, 1);
+        //TODO add pDisk func
+        for (uint64_t i = 0; i < pContext->nlb; i++) {
+          pDisk->add(pContext->lbaList.at(i), 1,
+                      pContext->buffer + i * LBA_SIZE);
+        }
 
-//         //TODO physical page add how much do i need to write the block
+        //TODO physical page add how much do i need to write the block
         
-//         mergeList(pContext->lbaList, list);
+        mergeList(pContext->lbaList, list);
 
-//         for (auto &iter : list) {
-//           beginAt = now;
+        for (auto &iter : list) {
+          beginAt = now;
 
-//           pPALOLD->add(iter, beginAt);
+          pPALOLD->add(iter, beginAt);
 
-//           finishedAt = MAX(finishedAt, beginAt);
-//         }
+          finishedAt = MAX(finishedAt, beginAt);
+        }
 
-//         Request req = Request(nandDone, context);
-//         req.finishedAt = finishedAt;
+        Request req = Request(nandDone, context);
+        req.finishedAt = finishedAt;
 
-//         completionQueue.push(req);
-//         updateCompletion();
+        completionQueue.push(req);
+        updateCompletion();
 
-//         free(pContext->buffer);
-//         delete pContext->dma;
-//       };
+        free(pContext->buffer);
+        delete pContext->dma;
+      };
 
-//       VectorContext *pContext = (VectorContext *)context;
+      VectorContext *pContext = (VectorContext *)context;
 
-//       if (pContext->nlb > 1) {
-//         pContext->buffer = (uint8_t *)calloc(pContext->nlb * 8, 1);
+      if (pContext->nlb > 1) {
+        pContext->buffer = (uint8_t *)calloc(pContext->nlb * 8, 1);
 
-//         cfgdata.pInterface->dmaRead(pContext->slba, pContext->nlb * 8,
-//                                     pContext->buffer, doAdd, context);
-//       }
-//       else {
-//         doAdd(now, context);
-//       }
-//     };
+        cfgdata.pInterface->dmaRead(pContext->slba, pContext->nlb * 8,
+                                    pContext->buffer, doAdd, context);
+      }
+      else {
+        doAdd(now, context);
+      }
+    };
 
-//     CPUContext *pCPU = new CPUContext(doDMA, pContext, CPU::NVME__OCSSD,
-//                                       CPU::PHYSICAL_PAGE_ADD);
+    CPUContext *pCPU = new CPUContext(doDMA, pContext, CPU::NVME__OCSSD,
+                                      CPU::PHYSICAL_PAGE_ADD);
 
-//     pContext->beginAt = getTick();
+    pContext->beginAt = getTick();
 
-//     if (req.useSGL) {
-//       pContext->dma =
-//           new SGL(cfgdata, cpuHandler, pCPU, req.entry.data1, req.entry.data2);
-//     }
-//     else {
-//       pContext->dma = new PRPList(cfgdata, cpuHandler, pCPU, req.entry.data1,
-//                                   req.entry.data2, (uint64_t)nppa * LBA_SIZE);
-//     }
-//   }
+    if (req.useSGL) {
+      pContext->dma =
+          new SGL(cfgdata, cpuHandler, pCPU, req.entry.data1, req.entry.data2);
+    }
+    else {
+      pContext->dma = new PRPList(cfgdata, cpuHandler, pCPU, req.entry.data1,
+                                  req.entry.data2, (uint64_t)nppa * LBA_SIZE);
+    }
+  }
 
-//   if (err) {
-//     func(resp);
-//   }
-// }
+  if (err) {
+    func(resp);
+  }
+}
 
 
 
@@ -1840,6 +1840,117 @@ void OpenChannelSSD20::writeInternal(std::vector<uint64_t> &lbaList,
   execute(CPU::NVME__OCSSD, CPU::WRITE_INTERNAL, doWrite, pContext);
 }
 
+void OpenChannelSSD20::addInternal(std::vector<uint64_t> &lbaList,
+                                     DMAFunction &func, void *context,
+                                     bool mode) {
+  OCSSDContext *pContext = new OCSSDContext();
+  std::vector<ChunkUpdateEntry> chunks;
+  bool err = false;
+  uint64_t idx = 1;
+
+  pContext->req = Request(func, context);
+  pContext->beginAt =
+      getTick() + applyLatency(CPU::NVME__OCSSD, CPU::CONVERT_UNIT);
+
+  convertUnit(lbaList, pContext->list, chunks, false, mode);
+
+  // Update ChunkDescriptor
+  for (auto &iter : chunks) {
+    // Check block status
+    if (iter.pDesc->chunkState == OFFLINE) {
+      err = true;
+      warn("Writing to dead chunk");
+    }
+    else if (iter.pDesc->chunkState == CLOSED) {
+      err = true;
+      warn("Writing to closed chunk");
+    }
+    // Check write pointer
+    else if (iter.pDesc->chunkState == OPEN &&
+             iter.pDesc->writePointer / structure.writeSize > iter.pageIdx) {
+      err = true;
+      warn("Write pointer violation");
+    }
+
+    if (err) {
+      ((IOContext *)context)
+          ->resp.makeStatus(false, false, TYPE_MEDIA_AND_DATA_INTEGRITY_ERROR,
+                            0xF2);  // Out of order write
+    }
+    else {
+      // Update write pointer
+      iter.pDesc->writePointer = (iter.pageIdx + 1) * structure.writeSize;
+      iter.pDesc->chunkState = OPEN;
+
+      // Do we need to close this chunk?
+      if (iter.pageIdx == param.page - 1) {
+        iter.pDesc->chunkState = CLOSED;
+      }
+    }
+
+    if (err) {
+      if (idx <= 0xFFFFFFFF) {
+        ((IOContext *)context)->resp.entry.dword0 |= idx;
+      }
+      else {
+        ((IOContext *)context)->resp.entry.reserved |= (idx >> 32);
+      }
+    }
+
+    idx <<= 1;
+  }
+
+  if (!err) {
+    ((IOContext *)context)->resp.entry.dword0 = 0xFFFFFFFF;
+    ((IOContext *)context)->resp.entry.reserved = 0xFFFFFFFF;
+  }
+  else {
+    // Remove invalid LBAs
+    uint64_t mask = ((IOContext *)context)->resp.entry.reserved;
+    idx = 1;
+
+    mask <<= 32;
+    mask |= ((IOContext *)context)->resp.entry.dword0;
+
+    for (auto iter = pContext->list.begin(); iter != pContext->list.end();) {
+      if (mask & idx) {
+        iter = pContext->list.erase(iter);
+      }
+      else {
+        iter++;
+      }
+
+      idx <<= 1;
+    }
+  }
+
+  DMAFunction doWrite = [this](uint64_t tick, void *context) {
+    auto pContext = (OCSSDContext *)context;
+
+    tick = MAX(tick, pContext->beginAt);
+
+    uint64_t beginAt;
+    uint64_t finishedAt = tick;
+
+    for (auto &iter : pContext->list) {
+      beginAt = pContext->beginAt;
+
+      pPALOLD->write(iter, beginAt);
+
+      finishedAt = MAX(finishedAt, beginAt);
+    }
+
+    pContext->req.finishedAt = finishedAt;
+    completionQueue.push(pContext->req);
+
+    updateCompletion();
+
+    delete pContext;
+  };
+
+  execute(CPU::NVME__OCSSD, CPU::WRITE_INTERNAL, doWrite, pContext);
+}
+
 void OpenChannelSSD20::eraseInternal(std::vector<uint64_t> &lbaList,
                                      DMAFunction &func, void *context,
                                      bool mode) {
@@ -2250,6 +2361,90 @@ void OpenChannelSSD20::write(SQEntryWrapper &req, RequestFunction &func) {
     else {
       pContext->dma = new PRPList(cfgdata, cpuHandler, pCPU, req.entry.data1,
                                   req.entry.data2, (uint64_t)nlb * LBA_SIZE);
+    }
+  }
+  else {
+    func(resp);
+  }
+}
+
+void OpenChannelSSD20::add(SQEntryWrapper &req, RequestFunction &func) {
+  bool err = false;
+
+  CQEntryWrapper resp(req);
+  uint64_t slba = ((uint64_t)req.entry.dword11 << 32) | req.entry.dword10;
+  uint16_t nlb = (req.entry.dword12 & 0xFFFF) + 1;
+  // bool fua = req.entry.dword12 & 0x40000000;
+
+  if (nlb == 0) {
+    err = true;
+    warn("nvme_namespace: host tried to read 0 blocks");
+  }
+
+  readCount++;
+
+  debugprint(LOG_HIL_NVME, "OCSSD   | ADD  | %" PRIX64 " + %d", slba, nlb);
+
+  if (!err) {
+    DMAFunction doRead = [this](uint64_t, void *context) {
+      DMAFunction doWrite = [this](uint64_t tick, void *context) {
+        DMAFunction dmaDone = [](uint64_t tick, void *context) {
+          IOContext *pContext = (IOContext *)context;
+
+          debugprint(LOG_HIL_NVME,
+                     "OCSSD   | ADD  | %" PRIX64 " + %d | DMA %" PRIu64
+                     " - %" PRIu64 " (%" PRIu64 ")",
+                     pContext->slba, pContext->nlb, pContext->tick, tick,
+                     tick - pContext->tick);
+
+          pContext->function(pContext->resp);
+
+          if (pContext->buffer) {
+            free(pContext->buffer);
+          }
+
+          delete pContext->dma;
+          delete pContext;
+        };
+
+        IOContext *pContext = (IOContext *)context;
+
+        debugprint(LOG_HIL_NVME,
+                   "OCSSD   | ADD  | %" PRIX64 " + %d | NAND %" PRIu64
+                   " - %" PRIu64 " (%" PRIu64 ")",
+                   pContext->slba, pContext->nlb, pContext->beginAt, tick,
+                   tick - pContext->beginAt);
+
+        pContext->tick = tick;
+        pContext->buffer = (uint8_t *)calloc(pContext->nlb, LBA_SIZE);
+
+        pDisk->read(pContext->slba, pContext->nlb, pContext->buffer);
+        pContext->dma->write(0, pContext->nlb * LBA_SIZE, pContext->buffer,
+                             dmaDone, context);
+      };
+
+      IOContext *pContext = (IOContext *)context;
+      std::vector<uint64_t> input = {pContext->slba, pContext->nlb};
+
+      readInternal(input, doWrite, pContext);
+    };
+
+    IOContext *pContext = new IOContext(func, resp);
+
+    pContext->beginAt = getTick();
+    pContext->slba = slba;
+    pContext->nlb = nlb;
+
+    CPUContext *pCPU =
+        new CPUContext(doRead, pContext, CPU::NVME__OCSSD, CPU::READ);
+
+    if (req.useSGL) {
+      pContext->dma =
+          new SGL(cfgdata, cpuHandler, pCPU, req.entry.data1, req.entry.data2);
+    }
+    else {
+      pContext->dma = new PRPList(cfgdata, cpuHandler, pCPU, req.entry.data1,
+                                  req.entry.data2, pContext->nlb * LBA_SIZE);
     }
   }
   else {
