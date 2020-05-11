@@ -109,6 +109,8 @@ function = [
     ["hil/hil.cc", "read", 4, 0],
     ["hil/hil.cc", "write", 4, 1],
     ["hil/hil.cc", "flush", 4, 2],
+    #add
+    ["hil/hil.cc", "flush", 4, 41],
     ["hil/nvme/controller.cc", "handleRequest", 5, 14],
     ["hil/nvme/controller.cc", "collectSQ", 5, 13],
     ["hil/nvme/controller.cc", "completion", 5, 16],
