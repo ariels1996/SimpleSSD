@@ -135,6 +135,27 @@ void PALOLD::write(Request &req, uint64_t &tick) {
   tick = finishedAt;
 }
 
+void PALOLD::add(Request &req, uint64_t &tick) {
+  uint64_t finishedAt = tick;
+  ::Command cmd(tick, 0, OPER_WRITE, param.superPageSize);
+  std::vector<::CPDPBP> list;
+
+  printPPN(req, "ADD");
+
+  convertCPDPBP(req, list);
+
+  for (auto &iter : list) {
+    printCPDPBP(iter, "ADD");
+
+    pal->submit(cmd, iter);
+    stat.writeCount++;
+
+    finishedAt = MAX(finishedAt, cmd.finished);
+  }
+
+  tick = finishedAt;
+}
+
 void PALOLD::erase(Request &req, uint64_t &tick) {
   uint64_t finishedAt = tick;
   ::Command cmd(tick, 0, OPER_ERASE, param.superPageSize * param.page);
@@ -538,6 +559,16 @@ void PALOLD::write(::CPDPBP &addr, uint64_t &tick) {
   printCPDPBP(addr, "WRITE");
   pal->submit(cmd, addr);
   stat.writeCount++;
+
+  tick = cmd.finished;
+}
+
+void PALOLD::add(::CPDPBP &addr, uint64_t &tick) {
+  ::Command cmd(tick, 0, OPER_READ, param.superPageSize);
+
+  printCPDPBP(addr, "ADD");
+  pal->submit(cmd, addr);
+  stat.readCount++;
 
   tick = cmd.finished;
 }
