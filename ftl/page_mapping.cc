@@ -940,7 +940,7 @@ void PageMapping::addInternal(Request &req, uint64_t &tick, bool sendToPAL) {
   // Exclude CPU operation when initializing
   if (sendToPAL) {
     tick = finishedAt;
-    tick += applyLatency(CPU::FTL__PAGE_MAPPING, CPU::ADD_INTERNAL);
+    //tick += applyLatency(CPU::FTL__PAGE_MAPPING, CPU::ADD_INTERNAL);
   }
 
   // GC if needed

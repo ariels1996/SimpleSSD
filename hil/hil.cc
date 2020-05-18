@@ -121,8 +121,8 @@ void HIL::add(Request &req) {
 
     stat.request[0]++;
     stat.iosize[0] += pReq->length;
-    updateBusyTime(0, beginAt, tick);
-    updateBusyTime(2, beginAt, tick);
+    //updateBusyTime(0, beginAt, tick);
+    //updateBusyTime(2, beginAt, tick);
 
     pReq->finishedAt = tick;
     completionQueue.push(*pReq);
@@ -132,7 +132,7 @@ void HIL::add(Request &req) {
     delete pReq;
   };
 
-  execute(CPU::HIL, CPU::ADD, doAdd, new Request(req));
+  //execute(CPU::HIL, CPU::ADD, doAdd, new Request(req));
 }
 
 
