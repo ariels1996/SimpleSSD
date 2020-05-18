@@ -61,6 +61,7 @@ class PALOLD : public AbstractPAL {
 
   void read(Request &, uint64_t &) override;
   void write(Request &, uint64_t &) override;
+  void add(Request &, uint64_t &) override;
   void erase(Request &, uint64_t &) override;
 
   void getStatList(std::vector<Stats> &, std::string) override;
@@ -70,6 +71,7 @@ class PALOLD : public AbstractPAL {
   // Direct interface for OCSSD
   void read(::CPDPBP &, uint64_t &);
   void write(::CPDPBP &, uint64_t &);
+  void add(::CPDPBP &, uint64_t &);
   void erase(::CPDPBP &, uint64_t &);
 };
 
