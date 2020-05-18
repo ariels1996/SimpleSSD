@@ -125,6 +125,10 @@ void PAL::write(Request &req, uint64_t &tick) {
   pPAL->write(req, tick);
 }
 
+void PAL::add(Request &req, uint64_t &tick) {
+  pPAL->add(req, tick);
+}
+
 void PAL::erase(Request &req, uint64_t &tick) {
   pPAL->erase(req, tick);
 }
