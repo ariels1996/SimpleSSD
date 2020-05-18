@@ -39,6 +39,7 @@ class AbstractPAL : public StatObject {
 
   virtual void read(Request &, uint64_t &) = 0;
   virtual void write(Request &, uint64_t &) = 0;
+  virtual void add(Request &, uint64_t &) = 0;
   virtual void erase(Request &, uint64_t &) = 0;
 };
 
