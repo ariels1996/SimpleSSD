@@ -911,7 +911,7 @@ void PageMapping::addInternal(Request &req, uint64_t &tick, bool sendToPAL) {
         palRequest.ioFlag = req.ioFlag;
         palRequest.ioFlag.flip();
 
-        pPAL->read(palRequest, beginAt);
+        pPAL->add(palRequest, beginAt);
       }
 
       // update mapping to table
@@ -930,7 +930,7 @@ void PageMapping::addInternal(Request &req, uint64_t &tick, bool sendToPAL) {
           palRequest.ioFlag.set();
         }
 
-        pPAL->write(palRequest, beginAt);
+        pPAL->add(palRequest, beginAt);
       }
 
       finishedAt = MAX(finishedAt, beginAt);

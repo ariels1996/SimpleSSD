@@ -132,7 +132,7 @@ void HIL::add(Request &req) {
     delete pReq;
   };
 
-  //execute(CPU::HIL, CPU::ADD, doAdd, new Request(req));
+  execute(CPU::HIL, CPU::ADD, doAdd, new Request(req));
 }
 
 
