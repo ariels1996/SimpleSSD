@@ -87,7 +87,7 @@ void FTL::add(Request &req, uint64_t &tick) {
 
   pFTL->add(req, tick);
 
-  tick += applyLatency(CPU::FTL, CPU::ADD);
+  //tick += applyLatency(CPU::FTL, CPU::ADD);
 }
 
 void FTL::trim(Request &req, uint64_t &tick) {

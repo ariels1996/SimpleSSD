@@ -235,7 +235,7 @@ void PageMapping::add(Request &req, uint64_t &tick) {
     warn("FTL got empty request");
   }
 
-  tick += applyLatency(CPU::FTL__PAGE_MAPPING, CPU::ADD);
+  //tick += applyLatency(CPU::FTL__PAGE_MAPPING, CPU::ADD);
 }
 
 void PageMapping::trim(Request &req, uint64_t &tick) {

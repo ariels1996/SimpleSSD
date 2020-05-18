@@ -157,7 +157,7 @@ void ICL::add(Request &req, uint64_t &tick) {
              finishedAt - tick);
 
   tick = finishedAt;
-  tick += applyLatency(CPU::ICL, CPU::ADD);
+  //tick += applyLatency(CPU::ICL, CPU::ADD);
 }
 
 void ICL::flush(LPNRange &range, uint64_t &tick) {
