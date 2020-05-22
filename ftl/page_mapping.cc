@@ -651,7 +651,7 @@ void PageMapping::readInternal(Request &req, uint64_t &tick) {
     else {
       pDRAM->read(&(*mappingList), 8, tick);
     }
-
+    //0521 bitset -> smallest i/o unit in page
     for (uint32_t idx = 0; idx < bitsetSize; idx++) {
       if (req.ioFlag.test(idx) || !bRandomTweak) {
         auto &mapping = mappingList->second.at(idx);
