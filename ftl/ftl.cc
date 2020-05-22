@@ -24,7 +24,7 @@
 namespace SimpleSSD {
 
 namespace FTL {
-
+//0521
 FTL::FTL(ConfigReader &c, DRAM::AbstractDRAM *d) : conf(c), pDRAM(d) {
   PAL::Parameter *palparam;
 

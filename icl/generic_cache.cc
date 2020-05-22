@@ -28,7 +28,7 @@
 namespace SimpleSSD {
 
 namespace ICL {
-
+//0521
 GenericCache::GenericCache(ConfigReader &c, FTL::FTL *f, DRAM::AbstractDRAM *d)
     : AbstractCache(c, f, d),
       superPageSize(f->getInfo()->pageSize),
@@ -474,7 +474,7 @@ bool GenericCache::read(Request &req, uint64_t &tick) {
       for (auto &iter : readList) {
         Line *pLine = &cacheData[iter.second >> 32][iter.second & 0xFFFFFFFF];
 
-        // Read data
+        // Read data 0521
         reqInternal.lpn = iter.first / lineCountInSuperPage;
         reqInternal.ioFlag.reset();
         reqInternal.ioFlag.set(iter.first % lineCountInSuperPage);
